@@ -24,6 +24,10 @@ namespace MemoryCache
                 var apiUrl = Configuration.GetSection("MercadoBitcoin:BaseUrl").Value;
                 client.BaseAddress = new Uri(apiUrl);
             });
+
+            services.Configure<CacheSettings>(Configuration.GetSection("Cache"));
+
+            services.AddMemoryCache();
         }
 
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)

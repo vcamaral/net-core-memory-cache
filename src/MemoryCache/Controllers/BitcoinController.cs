@@ -1,6 +1,9 @@
 ﻿using MemoryCache.DataContracts;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
+using System;
 using System.Net.Http;
 using System.Threading.Tasks;
 
@@ -10,13 +13,24 @@ namespace MemoryCache.Controllers
     public class BitcoinController : Controller
     {
         [HttpGet]
-        public async Task<IActionResult> GetBitcoinPrice([FromServices] IHttpClientFactory httpClientFactory)
+        public async Task<IActionResult> GetBitcoinPrice(
+            [FromServices] IHttpClientFactory httpClientFactory,
+            [FromServices] IOptions<CacheSettings> cacheSettings,
+            [FromServices] IMemoryCache memoryCache)
         {
-            var client = httpClientFactory.CreateClient("MercadoBitcoin");
-            var response = await client.GetStringAsync("api/BTC/ticker");
-            var bitcoin = JsonConvert.DeserializeObject<Bitcoin>(response);
+            var bitcoinPrice = await memoryCache.GetOrCreate("BitcoinPrice", async cache =>
+            {
+                cache.SetAbsoluteExpiration(TimeSpan.FromSeconds(cacheSettings.Value.ExpirationInSeconds));
 
-            return Ok(new { Price = bitcoin.Ticker.Buy });
+                var client = httpClientFactory.CreateClient("MercadoBitcoin");
+                var response = await client.GetStringAsync("api/BTC/ticker");
+                var bitcoin = JsonConvert.DeserializeObject<Bitcoin>(response);
+
+                return bitcoin.Ticker.Buy;
+            });
+            
+
+            return Ok(new { Price = bitcoinPrice });
         }
     }
 }
