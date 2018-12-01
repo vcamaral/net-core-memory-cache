@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using System;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,6 +18,12 @@ namespace MemoryCache
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddMvc();
+
+            services.AddHttpClient("MercadoBitcoin", client =>
+            {
+                var apiUrl = Configuration.GetSection("MercadoBitcoin:BaseUrl").Value;
+                client.BaseAddress = new Uri(apiUrl);
+            });
         }
 
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
